@@ -1,0 +1,7 @@
+# Local, unsanitized originals of the bundled examples — never published
+.local/
+
+# Capture artifacts and browser profiles, should they ever land here
+captures/
+*.har
+.DS_Store
