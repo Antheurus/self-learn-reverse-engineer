@@ -1,3 +1,4 @@
+// ENV: browser-run-code — Browser via `playwright-cli run-code --filename=<this>` — a single function expression. No require/import/fs/fetch/setTimeout; it never touches disk.
 // probe-signature-enforcement.js — before spending hours reverse-engineering an
 // obfuscated per-call signature (X-Bogus, X-Gnarly, msToken, HMAC param), test
 // EMPIRICALLY whether the backend actually validates it. Some of these are

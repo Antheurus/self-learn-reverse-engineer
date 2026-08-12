@@ -1,3 +1,4 @@
+// ENV: browser-run-code — Browser via `playwright-cli run-code --filename=<this>` — a single function expression. No require/import/fs/fetch/setTimeout; it never touches disk.
 // capture-on-trigger.js — capture the exact outgoing payload of an action that
 // DevTools Network tab keeps missing: composers that send on blur, video-progress
 // pings, encrypted-body requests where only the pre-encryption call matters, or

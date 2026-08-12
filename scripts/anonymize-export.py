@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# ENV: local-python — Local python3 on your own machine — reads and writes files on disk. NOT a browser snippet.
 """anonymize-export.py — turn a real XLSX/CSV export into a safe dummy fixture.
 
 Real production exports (campaign data, order data, PII-bearing reports)

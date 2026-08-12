@@ -1,3 +1,4 @@
+// ENV: browser-run-code — Browser via `playwright-cli run-code --filename=<this>` — a single function expression. No require/import/fs/fetch/setTimeout; it never touches disk.
 // find-fields-recursive.js — walk an unknown/undocumented JSON blob (an API
 // response you don't have a schema for) and find every field whose KEY matches
 // a keyword/regex set, regardless of nesting depth. Faster than eyeballing a

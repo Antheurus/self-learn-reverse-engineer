@@ -1,3 +1,4 @@
+// ENV: browser-run-code — Browser via `playwright-cli run-code --filename=<this>` — a single function expression. No require/import/fs/fetch/setTimeout; it never touches disk.
 // capture-har.js — record a real HAR 1.2 of a flow, VERBATIM (headers + bodies + responses).
 //
 // run-code is sandboxed (no `require`, no fs), so this RETURNS the HAR object. Save it to disk:

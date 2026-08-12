@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# ENV: shell — Shell — run it directly with bash.
 # Scaffold a new playbook in <project>/docs/automation/<name>.md
 # Usage: ~/.claude/skills/self-learn-automation/scripts/new-playbook.sh <playbook-name> "<one-line description>"
 #

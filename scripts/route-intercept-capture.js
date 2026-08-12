@@ -1,3 +1,4 @@
+// ENV: browser-run-code — Browser via `playwright-cli run-code --filename=<this>` — a single function expression. No require/import/fs/fetch/setTimeout; it never touches disk.
 // route-intercept-capture.js — capture the verbatim body of a MUTATING endpoint
 // (create/update/delete) WITHOUT letting the real write reach the server.
 //

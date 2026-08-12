@@ -1,3 +1,4 @@
+// ENV: browser-console — paste the whole file into the DevTools Console on a logged-in page. It declares top-level functions, so it does NOT fit run-code's single-expression sandbox.
 // poll-async-export.js — generalized polling for a submit → poll → download-URL
 // async job (report generation, video export, order export). Goes beyond the
 // simple pollUntil() in primitives.md §3 with three additions real captures

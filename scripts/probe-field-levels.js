@@ -1,3 +1,4 @@
+// ENV: browser-run-code — Browser via `playwright-cli run-code --filename=<this>` — a single function expression. No require/import/fs/fetch/setTimeout; it never touches disk.
 // probe-field-levels.js — classify EVERY header/query/body field of a captured
 // request into L1 (auth/required) / L2 (functional/customizes result) / L3
 // (optional/telemetry) by testing REMOVAL, never by guessing from the name.

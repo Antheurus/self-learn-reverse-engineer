@@ -1,3 +1,4 @@
+// ENV: browser-run-code — Browser via `playwright-cli run-code --filename=<this>` — a single function expression. No require/import/fs/fetch/setTimeout; it never touches disk.
 // replay-with-fresh-fields.js — steal the app's OWN assembled request body once
 // (fields you can't hand-build: a signed profileId, a server-issued session
 // token embedded in the payload, a computed hash), then replay it repeatedly

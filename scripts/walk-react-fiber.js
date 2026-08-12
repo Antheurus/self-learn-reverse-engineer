@@ -1,3 +1,4 @@
+// ENV: browser-console — DevTools Console — paste the whole file into the console on a logged-in page. Defines multiple functions, so it does NOT fit run-code's single-expression sandbox.
 // walk-react-fiber.js — read internal React component state that Redux/Context
 // doesn't expose, or FORCE a React-controlled prop (e.g. a `disabled` button
 // that plain `el.disabled = false` won't unlock, because React re-renders it

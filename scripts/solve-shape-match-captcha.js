@@ -1,3 +1,4 @@
+// ENV: browser-run-code — Browser via `playwright-cli run-code --filename=<this>` — a single function expression. No require/import/fs/fetch/setTimeout; it never touches disk.
 // solve-shape-match-captcha.js — drive a "pick N objects with the same
 // shape" visual captcha (first seen: TikTok Seller Center's "Pilih 2 objek
 // yang bentuknya sama") to completion via an OpenRouter vision model, run

@@ -57,23 +57,39 @@ This is the opposite of "rediscover the DOM every run".
 | `references/self-correction.md` | Failure-mode catalog |
 | `references/be-adapter-translation.md` | Patchright UI fallback |
 
-**Scripts** — droppable probes, mostly for `playwright-cli run-code` or the DevTools console:
+**Scripts** — droppable probes. They span three incompatible execution environments behind two
+file extensions, so **the extension is not the signal**: every file carries an `ENV:` banner on its
+first line, and `tests/check-env-banners.py` proves each one still parses in the form it is actually
+consumed in.
 
-| Script | Does |
+| Runs in | What that means |
 |---|---|
-| `capture-har.js` | Passive HAR 1.2 capture |
-| `capture-on-trigger.js` | Active fetch/axios monkeypatch capture |
-| `route-intercept-capture.js` | Safe write-path capture — fakes success, sends nothing |
-| `comprehensive-search-harvest.js` | Value-first credential locator (cookie / localStorage / IndexedDB / heap) |
-| `probe-signature-enforcement.js` | Strips a signature param and resends — is it actually enforced? |
-| `probe-field-levels.js` | Which nesting level carries the field |
-| `find-fields-recursive.js` | Recursive field finder in unknown JSON |
-| `replay-with-fresh-fields.js` | Steal-template-then-replay, with a dry-run mode |
-| `walk-react-fiber.js` / `walk-vue-tree.js` | Read component state directly |
-| `poll-async-export.js` | Poll a job-then-download export flow |
-| `solve-shape-match-captcha.js` | Shape-match captcha solver via a vision model |
-| `anonymize-export.py` | Strip identifying values out of a capture before sharing |
-| `new-playbook.sh` | Scaffold a fresh playbook |
+| `browser-run-code` | Fed to `playwright-cli run-code --filename=<file>`. Must be a **single function expression** — spliced into `await (<file>)(page)`. No `require`/`import`/`fs`/`fetch`/`setTimeout`, and it never touches disk. |
+| `browser-console` | Pasted whole into DevTools Console on a logged-in page. Declares several top-level functions, so it does **not** fit run-code's single-expression sandbox. |
+| `shell` | Run directly with bash. |
+| `local-python` | Runs on your own machine and reads/writes real files. Not a browser snippet. |
+
+| Script | Runs in | Does |
+|---|---|---|
+| `capture-har.js` | `browser-run-code` | Passive HAR 1.2 capture |
+| `capture-on-trigger.js` | `browser-run-code` | Active fetch/axios monkeypatch capture |
+| `route-intercept-capture.js` | `browser-run-code` | Safe write-path capture — fakes success, sends nothing |
+| `comprehensive-search-harvest.js` | `browser-console` | Value-first credential locator (cookie / localStorage / IndexedDB / heap) |
+| `probe-signature-enforcement.js` | `browser-run-code` | Strips a signature param and resends — is it actually enforced? |
+| `probe-field-levels.js` | `browser-run-code` | Which nesting level carries the field |
+| `find-fields-recursive.js` | `browser-run-code` | Recursive field finder in unknown JSON |
+| `replay-with-fresh-fields.js` | `browser-run-code` | Steal-template-then-replay, with a dry-run mode |
+| `walk-react-fiber.js` / `walk-vue-tree.js` | `browser-console` | Read component state directly |
+| `poll-async-export.js` | `browser-console` | Poll a job-then-download export flow |
+| `solve-shape-match-captcha.js` | `browser-run-code` | Shape-match captcha solver via a vision model |
+| `anonymize-export.py` | `local-python` | Strip identifying values out of a capture before sharing |
+| `new-playbook.sh` | `shell` | Scaffold a fresh playbook |
+
+`anonymize-export.py` stays Python deliberately. It is the only script that reads and writes files
+on disk, and openpyxl round-trips a workbook object so the fixture keeps its real structure —
+which is the entire point of the tool. A JS port would need SheetJS as the repo's first runtime
+dependency, would lose whatever SheetJS does not model on the round-trip, and would land a Node
+script that looks identical to the browser snippets while being unpasteable into a console.
 
 ## A few things it insists on
 

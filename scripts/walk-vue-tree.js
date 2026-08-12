@@ -1,3 +1,4 @@
+// ENV: browser-console — DevTools Console — paste the whole file into the console on a logged-in page. Defines multiple functions, so it does NOT fit run-code's single-expression sandbox.
 // walk-vue-tree.js — find a Vue component instance by the SHAPE of its $data
 // (a set of keys you expect, e.g. ['comments', 'counterVideoLive']) rather than
 // by DOM selector. Useful when Vuex doesn't expose the state you need — the

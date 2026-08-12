@@ -1,3 +1,4 @@
+// ENV: browser-console — DevTools Console — paste the whole file into the console on a logged-in page. Defines multiple functions, so it does NOT fit run-code's single-expression sandbox.
 // Credential harvest v3 — value-first locator. Paste in DevTools Console on a logged-in page.
 // Docs: references/credential-harvest.md
 //
