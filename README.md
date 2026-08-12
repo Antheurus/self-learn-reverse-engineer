@@ -66,7 +66,6 @@ consumed in.
 |---|---|
 | `browser-run-code` | Fed to `playwright-cli run-code --filename=<file>`. Must be a **single function expression** — spliced into `await (<file>)(page)`. No `require`/`import`/`fs`/`fetch`/`setTimeout`, and it never touches disk. |
 | `browser-console` | Pasted whole into DevTools Console on a logged-in page. Declares several top-level functions, so it does **not** fit run-code's single-expression sandbox. |
-| `shell` | Run directly with bash. |
 | `local-python` | Runs on your own machine and reads/writes real files. Not a browser snippet. |
 
 | Script | Runs in | Does |
@@ -83,7 +82,7 @@ consumed in.
 | `poll-async-export.js` | `browser-console` | Poll a job-then-download export flow |
 | `solve-shape-match-captcha.js` | `browser-run-code` | Shape-match captcha solver via a vision model |
 | `anonymize-export.py` | `local-python` | Strip identifying values out of a capture before sharing |
-| `new-playbook.sh` | `shell` | Scaffold a fresh playbook |
+| `new-playbook.py` | `local-python` | Scaffold a fresh playbook — `--dry-run`, credential stubbing, full frontmatter flags |
 
 `anonymize-export.py` stays Python deliberately. It is the only script that reads and writes files
 on disk, and openpyxl round-trips a workbook object so the fixture keeps its real structure —

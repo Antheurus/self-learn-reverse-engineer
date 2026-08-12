@@ -20,7 +20,7 @@ import sys
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 D = os.path.join(ROOT, "scripts")
 
-CONSOLE, RUNCODE, SHELL, LOCAL = "browser-console", "browser-run-code", "shell", "local-python"
+CONSOLE, RUNCODE, LOCAL = "browser-console", "browser-run-code", "local-python"
 
 ENV = {
     "anonymize-export.py": LOCAL,
@@ -28,7 +28,7 @@ ENV = {
     "capture-on-trigger.js": RUNCODE,
     "comprehensive-search-harvest.js": CONSOLE,
     "find-fields-recursive.js": RUNCODE,
-    "new-playbook.sh": SHELL,
+    "new-playbook.py": LOCAL,
     "poll-async-export.js": CONSOLE,
     "probe-field-levels.js": RUNCODE,
     "probe-signature-enforcement.js": RUNCODE,
@@ -47,8 +47,6 @@ def parse_check(path, env):
         return subprocess.run(
             [sys.executable, "-c", "import sys;compile(open(sys.argv[1]).read(),sys.argv[1],'exec')", path],
             capture_output=True, text=True)
-    if path.endswith(".sh"):
-        return subprocess.run(["bash", "-n", path], capture_output=True, text=True)
     body = open(path).read()
     # The wrapped form IS the contract for run-code; a plain module parse would pass a file
     # that run-code cannot accept, which is the exact mislabel this gate exists to catch.

@@ -1,4 +1,11 @@
 #!/usr/bin/env bash
+# RETIRED — do not run this, and do not restore it to scripts/.
+# Frozen here as the negative control for tests/test-new-playbook.py: it interpolates the
+# description into YAML frontmatter unquoted, so a description containing a colon produces
+# frontmatter no parser accepts. The test drives this file to show the bug is real before
+# asserting the Python replacement does not have it. A fix never shown failing beforehand is
+# indistinguishable from a no-op, which is why this stays in the tree rather than in git history
+# alone — history gets rewritten, and a control that silently disappears takes the proof with it.
 # ENV: shell — Shell — run it directly with bash.
 # Scaffold a new playbook in <project>/docs/automation/<name>.md
 # Usage: ~/.claude/skills/self-learn-automation/scripts/new-playbook.sh <playbook-name> "<one-line description>"

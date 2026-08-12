@@ -90,7 +90,7 @@ If the user's intent is ambiguous (e.g., "do the shopee thing"), check `docs/aut
 │   │   ├── self-correction.md           # failure mode catalog
 │   │   └── be-adapter-translation.md    # Patchright UI fallback only
 │   ├── scripts/
-│   │   ├── new-playbook.sh                    # scaffold a fresh playbook  [shell]
+│   │   ├── new-playbook.py                    # scaffold a playbook (argparse, --dry-run)  [local py]
 │   │   ├── capture-har.js                     # passive HAR 1.2 capture  [run-code]
 │   │   ├── comprehensive-search-harvest.js    # DevTools credential harvest v3  [console]
 │   │   ├── route-intercept-capture.js         # safe write-path capture (fake-success route)  [run-code]
@@ -103,7 +103,7 @@ If the user's intent is ambiguous (e.g., "do the shopee thing"), check `docs/aut
 │   │   ├── walk-react-fiber.js                # React fiber read/force  [console]
 │   │   ├── walk-vue-tree.js                   # Vue $data-shape component search  [console]
 │   │   └── anonymize-export.py                # XLSX/CSV → safe dummy fixture  [local py]
-│   ├── tests/check-env-banners.py       # gate: every script's ENV tag matches how it really parses
+│   ├── tests/                           # check-env-banners.py + test-new-playbook.py
 │   └── assets/example-playbooks/        # reference examples (read for shape)
 ├── sla-capture/SKILL.md                 # discovery sub-skill
 ├── sla-run/SKILL.md                     # execution sub-skill
@@ -112,7 +112,7 @@ If the user's intent is ambiguous (e.g., "do the shopee thing"), check `docs/aut
 └── sla-codify/SKILL.md                  # BE translation sub-skill
 ```
 
-The `[bracket]` on each script is its **execution environment**, not a category — `[run-code]` must be a single function expression spliced into `await (<file>)(page)`, `[console]` declares top-level functions and is pasted whole into DevTools, `[local py]` reads and writes real files on disk. They are mutually incompatible, so the file extension alone tells you nothing; each file repeats its environment in an `ENV:` banner on line 1, and `tests/check-env-banners.py` fails if a tag and the file's actual parse form ever disagree.
+The `[bracket]` on each script is its **execution environment**, not a category — `[run-code]` must be a single function expression spliced into `await (<file>)(page)`, `[console]` declares top-level functions and is pasted whole into DevTools, `[local py]` runs on your own machine and touches real files. They are mutually incompatible, so the file extension alone tells you nothing; each file repeats its environment in an `ENV:` banner on line 1, and `tests/check-env-banners.py` fails if a tag and the file's actual parse form ever disagree.
 
 **Browser engine:** `playwright-cli`, headed, on an isolated per-session profile (default-first: use `docs/profile/playwright-cli/` when free, copy it to `docs/profile/<name>/` when taken — full procedure in `references/primitives.md` §0.5). **Do not** use Playwright MCP `browser_*` or `cursor-ide-browser` for SLA unless the user explicitly overrides. **Headed is the default — never pass `--headless` unless the user explicitly asks for headless mode.**
 
