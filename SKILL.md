@@ -1,6 +1,6 @@
 ---
 name: self-learn-automation
-description: Build, run, and progressively improve browser-based automation playbooks for repetitive web tasks — multi-step click sequences, form fills, file downloads with polling, scraping flows. Uses playwright-cli (NOT Playwright MCP browser_*). Each playbook lives in `docs/automation/`. Router dispatches sla-capture, sla-run, sla-correct, sla-extensify (MV3 extensions), sla-codify (API mimic first, Patchright UI fallback). Trigger on "docs/automation", playbook names, "run/jalanin", "extensify", "codify", "mimic API", or multi-step web workflows.
+description: Build, run, and progressively improve browser-based automation playbooks for repetitive web tasks — multi-step click sequences, form fills, file downloads with polling, scraping flows. Uses playwright-cli (NOT Playwright MCP browser_*). Each playbook lives in `docs/automation/`. Router dispatches sla-capture, sla-run, sla-correct, sla-extensify (MV3 extensions), sla-codify (API mimic first, Patchright UI fallback), and sla-perf (DevTools-grade performance analysis over CDP — traces, throttling, coverage, and scrape-pipeline batching-vs-sequential — without installing chrome-devtools-mcp). Trigger on "docs/automation", playbook names, "run/jalanin", "extensify", "codify", "mimic API", "lemot/slow/performance/LCP/bottleneck", or multi-step web workflows.
 ---
 
 # Self-Learn Automation
@@ -32,11 +32,15 @@ This is the opposite pattern from "rediscover the DOM each time" — discovery i
     │  MV3 ext    │         │ 1) API mimic (method: api)  │  ← default
     └─────────────┘         │ 2) Patchright UI fallback   │
                             └─────────────────────────────┘
+
+    ┌─────────────┐
+    │  sla-perf   │  ← measures cost, changes nothing. Attaches at any point:
+    └─────────────┘    a page's load/interaction cost, or the pipeline's throughput
 ```
 
 ---
 
-## The bundle — five sub-skills
+## The bundle — six sub-skills
 
 | Sub-skill | Does | Entry point |
 |---|---|---|
@@ -45,6 +49,7 @@ This is the opposite pattern from "rediscover the DOM each time" — discovery i
 | `sla-correct` | Self-heal broken selectors/steps | Failed run or "automation broken" |
 | `sla-extensify` | MV3 extension from playbook + network contracts | "extensify", `extensions/` deliverable |
 | `sla-codify` | API mimic adapter first; Patchright UI only if needed | "codify", "mimic API", service endpoint |
+| `sla-perf` | Measure page cost and pipeline throughput over CDP; report opportunities, change nothing | "lemot", "slow", "performance", "LCP", "bottleneck", "kenapa scrape-nya lama" |
 
 **Start here:** invoke `Skill({skill: "<sla-name>"})` for the mode that matches the user's intent.
 
@@ -60,6 +65,7 @@ This is the opposite pattern from "rediscover the DOM each time" — discovery i
 | User reports "automation X is broken" or "this used to work" | `sla-correct` (then back to `sla-run`) |
 | User wants Chrome extension from playbook / network discovery | `sla-extensify` |
 | User wants a backend adapter / service endpoint from an existing playbook | `sla-codify` |
+| User asks why something is slow, or what could be made faster — a page or a pipeline | `sla-perf` |
 
 If the user's intent is ambiguous (e.g., "do the shopee thing"), check `docs/automation/*.md` first — if a matching playbook exists, default to `sla-run`. If not, ask via `AskUserQuestion` whether they want to capture a new one.
 
@@ -109,8 +115,19 @@ If the user's intent is ambiguous (e.g., "do the shopee thing"), check `docs/aut
 ├── sla-run/SKILL.md                     # execution sub-skill
 ├── sla-correct/SKILL.md                 # self-heal sub-skill
 ├── sla-extensify/SKILL.md               # MV3 extension from playbook
-└── sla-codify/SKILL.md                  # BE translation sub-skill
+├── sla-codify/SKILL.md                  # BE translation sub-skill
+└── sla-perf/                            # measurement sub-skill (read-only)
+    ├── SKILL.md
+    ├── references/cdp-mimic-map.md      # chrome-devtools-mcp → CDP, tool by tool
+    ├── references/page-opportunities.md # each finding and the field it derives from
+    ├── references/pipeline-throughput.md# batching vs sequential verdicts
+    └── scripts/                         # perf-trace.mjs [node], perf-analyze.py,
+                                         # pipeline-scan.py [local py]
 ```
+
+Project-local perf reports live in `<project>/docs/perf/<date>-<slug>/`, beside
+`docs/automation/` and under the same rule: check for an existing one before
+measuring again.
 
 The `[bracket]` on each script is its **execution environment**, not a category — `[run-code]` must be a single function expression spliced into `await (<file>)(page)`, `[console]` declares top-level functions and is pasted whole into DevTools, `[local py]` runs on your own machine and touches real files. They are mutually incompatible, so the file extension alone tells you nothing; each file repeats its environment in an `ENV:` banner on line 1, and `tests/check-env-banners.py` fails if a tag and the file's actual parse form ever disagree.
 
@@ -131,7 +148,8 @@ The `[bracket]` on each script is its **execution environment**, not a category 
 7. **Network captures are VERBATIM and flow-first — never synthesized.** Any flow touching an API is captured per `references/network-flow-spec.md`: a mermaid `## Flow`, literal copy-as-`fetch()` blocks (URL + headers + body kept exactly, signing params included), and an `## Orchestration chain` table mapping each response field to the next request's param. A paraphrased endpoint ("it returns the creators") is a guess and is rejected. The user's standing rule: this is SUPER VERBATIM "karena sangat rawan ngasal" — the literal call is the fact, the summary is the error.
 8. **Save the HAR; check it before re-capturing.** Every network capture writes a real `.har` (or capture JSON) into `docs/automation/captures/` (`scripts/capture-har.js`, or DevTools → Save all as HAR). Before opening a browser to RE anything, grep `docs/automation/` — if a playbook/capture/HAR already covers the flow, READ it and stop. Re-RE-ing an already-captured flow is banned; it is the single biggest documented time sink.
 9. **Selectors are READ off the live page, never written from memory — the selector-side twin of rule 7.** A capture is verbatim because a paraphrased endpoint is a guess; a selector invented without looking is the same error one layer up, and it is the more expensive one because it fails silently and invites a retry. So: snapshot before the first selector, and when a `role`+`name` match misses, escalate to the full enumeration (`node ~/.claude/skills/playwright-cli/scripts/probe-page.mjs <url>`) rather than to a second guess — the accessible name is often not the visible text. **One miss means look, two misses mean stop and report.** Never recover with an index (`.nth(3)`), an `innerText` equality check, or a longer CSS chain. This binds hardest on sites we did not build, where nothing about the DOM is derivable at all and a written selector is a certainty of being wrong: `~/.claude/skills/playwright-cli/references/no-guessing.md`.
-10. **Default-first profile, copy-on-collision, login-probe gate.** Each playwright-cli session must reach the site logged-in, in its own isolated profile. At session start, probe whether the default profile (`docs/profile/playwright-cli/`) is already in use: **free → use it; taken → tell the user and `cp` it to a per-session copy under `docs/profile/<name>/`** (delete `Singleton*` in the copy) so cookies/login carry over. Copy is the default collision behavior — `--fresh` (empty), loading extensions, and a different-account cookie export are explicit opt-ins only. Whatever profile is acquired, it must pass a **login-probe** (navigate, confirm no redirect to `/login`) before the session does any work. Parallel sessions each get a unique `-s=<task>` + unique profile dir — never share a `user-data-dir`. Full procedure: `references/primitives.md` §0.5.
+10. **DevTools capability comes from CDP through our own browser — never a second automation stack.** Everything `chrome-devtools-mcp` offers (performance traces, CPU/network throttling, JS/CSS coverage, heap snapshots, response bodies to disk, extension install) is reachable via `context.newCDPSession(page)` on the playwright-cli or Patchright session SLA already owns, so it inherits the authenticated profile and the anti-detection posture instead of fighting them. The tool-by-tool mapping is `sla-perf/references/cdp-mimic-map.md`. **Two name traps to know before reaching for either:** `playwright-cli tracing-start` is Playwright's *action log* with DOM snapshots, not a performance trace — it contains no CPU samples, no LCP and no long tasks, and reaching for it to answer "why is this slow" returns a file that looks relevant and is not. And CDP `Tracing.start` must use `transferMode: 'ReturnAsStream'` with the result read in chunks straight to a file; the default floods the message queue and a real page's trace runs to tens of megabytes.
+11. **Default-first profile, copy-on-collision, login-probe gate.** Each playwright-cli session must reach the site logged-in, in its own isolated profile. At session start, probe whether the default profile (`docs/profile/playwright-cli/`) is already in use: **free → use it; taken → tell the user and `cp` it to a per-session copy under `docs/profile/<name>/`** (delete `Singleton*` in the copy) so cookies/login carry over. Copy is the default collision behavior — `--fresh` (empty), loading extensions, and a different-account cookie export are explicit opt-ins only. Whatever profile is acquired, it must pass a **login-probe** (navigate, confirm no redirect to `/login`) before the session does any work. Parallel sessions each get a unique `-s=<task>` + unique profile dir — never share a `user-data-dir`. Full procedure: `references/primitives.md` §0.5.
 
 ---
 
@@ -154,6 +172,10 @@ The `[bracket]` on each script is its **execution environment**, not a category 
 | Describe a multi-step API flow as a paragraph | Use the `## Orchestration chain` table: responseN.field → requestN+1.param. The chain IS the deliverable. |
 | Finish a network capture without saving a HAR/JSON to `docs/automation/captures/` | Nothing durable was produced; the RE evaporates and gets redone |
 | Open a browser to RE a flow already in `docs/automation/` | Banned — read the saved playbook/HAR. This is the documented multi-hour time sink. |
+| Install `chrome-devtools-mcp` to get DevTools capability | It is CDP underneath, and our browser already speaks CDP. A second stack means a second profile, no Patchright, and two things to keep in sync |
+| Use `playwright-cli tracing-start` to answer "why is this page slow" | Wrong artifact — that is the action log, not a performance trace. `sla-perf` |
+| Profile a Vite/webpack dev server | Measured on one real dashboard: 155 requests / 68 MB trace / 28 s DCL on `nuxt dev` versus 47 / 14 MB / 2.8 s on its production build. Build first |
+| Print a trace, HAR body, or heap snapshot into the conversation | Megabytes for nothing. Every CDP read that can take a `filePath` should |
 
 ---
 
@@ -172,6 +194,8 @@ The `[bracket]` on each script is its **execution environment**, not a category 
 | Reading React/Vue internal component state DevTools doesn't expose | `references/primitives.md` §22-23, `scripts/walk-react-fiber.js`, `scripts/walk-vue-tree.js` |
 | Harvest SPC_CDS / csrf / session keys | `references/credential-harvest.md`, `scripts/comprehensive-search-harvest.js` |
 | Patchright UI fallback only | `references/be-adapter-translation.md` |
+| Measuring what a page or a pipeline COSTS, rather than what it does | `sla-perf` |
+| Reaching for a DevTools capability (trace, throttle, coverage, heap, bodies-to-disk) from any sub-skill | `sla-perf/references/cdp-mimic-map.md` |
 | Looking for an example before writing your own | `assets/example-playbooks/*.md` |
 
 Each reference file is self-contained. Don't read all of them upfront — pull only what's needed for the current task.
