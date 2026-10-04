@@ -40,7 +40,6 @@ This is the opposite of "rediscover the DOM every run".
 | `sla-correct` | Self-heals broken selectors and steps | A failed run, "automation broken" |
 | `sla-extensify` | Builds an MV3 Chrome extension from the playbook | "extensify" |
 | `sla-codify` | Backend adapter — HTTP mimic first, UI automation only as fallback | "codify", "mimic API" |
-| `sla-daemonize` | One-shot flow → resident automation: fires on page open, keeps running | "jalan sendiri", "jalan terus", "daemonize" |
 
 ## What's in here
 

@@ -1,4 +1,8 @@
 // ENV: browser-run-code — Browser via `playwright-cli run-code --filename=<this>` — a single function expression. No require/import/fs/fetch/setTimeout; it never touches disk.
+// WARNING: this runs IN THE PAGE, so it CANNOT strip a header the app's own monkeypatched
+// fetch re-adds — it will answer 200 for a header that is mandatory. Trustworthy only for a
+// signature carried as a URL QUERY PARAM. For a HEADER, replay verbatim from curl instead:
+// references/api-mimic-codify.md §1.5.
 // probe-signature-enforcement.js — before spending hours reverse-engineering an
 // obfuscated per-call signature (X-Bogus, X-Gnarly, msToken, HMAC param), test
 // EMPIRICALLY whether the backend actually validates it. Some of these are

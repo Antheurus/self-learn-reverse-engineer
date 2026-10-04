@@ -8,7 +8,12 @@ Session/profile acquisition is **§0.5** — run it before opening any browser. 
 playwright-cli -s=<task> open "<url>" --headed --persistent --profile=<acquired-profile>/
 ```
 
-> **`--persistent` is MANDATORY alongside `--profile`.** Without it, playwright-cli ignores the profile and launches **headless with an in-memory user-data-dir** — the window is invisible AND login never persists across navigations (you'll keep bouncing to the login page). Verify after every open: `playwright-cli list` must show `headed: true` and `user-data-dir: <your-profile>/`, NOT `<in-memory>`. If it shows in-memory/headless, you omitted `--persistent` — `close` and reopen. Also: when a `-s=<task>` session is already open, a second `open` only NAVIGATES it; the `--headed/--persistent/--profile` flags are ignored. To change launch flags you must `close` first.
+> **Two independent flags, two independent failures — `--headed` owns the window, `--persistent` owns the profile.** Passing one does not give you the other, and each omission fails silently in its own way.
+>
+> - **`--headed`** — without it the browser is **headless**. This is the tool's default, so it is correct for unattended work; pass the flag whenever the user asked to see, watch, or drive the browser themselves (manual login, captcha, a proxy/extension they configure).
+> - **`--persistent`** — mandatory alongside `--profile`, or playwright-cli ignores the profile and uses an **in-memory user-data-dir**, so login never persists across navigations (you keep bouncing to the login page).
+>
+> **Verify both after every open with `playwright-cli list --json`**, which reports `"headed"`, `"persistent"` and `"userDataDir"` per session. Read those fields — the `### Browser opened with pid …` / `### Page` / snapshot output that `open` prints is **byte-identical in headed and headless**, so it can never tell you which one you got. Measured 2026-08-13 on 0.1.17: an `open --browser=chrome --persistent --profile=…` with `--headed` omitted printed a perfectly normal reply while the launched Chrome's GPU helper carried `--headless` and no window ever appeared. Wrong on either field → `close` and reopen with the right flags: when a `-s=<task>` session is already open, a second `open` only NAVIGATES it and every launch flag is ignored.
 
 ---
 

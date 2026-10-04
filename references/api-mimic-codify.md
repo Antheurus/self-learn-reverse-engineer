@@ -35,14 +35,36 @@ playwright-cli -s=sla-probe request <id>
 
 ### 1.5 Signature-enforcement probe (do this before reverse-engineering a signer)
 
-Before spending hours on an obfuscated per-call signature (`X-Bogus`, `X-Gnarly`, HMAC query param), test **empirically** whether the backend actually validates it. Some are best-effort bot-scoring telemetry that gets logged but never rejected on — confirmed on at least one integration where stripping the signature param still returned 200 with identical data.
+Before spending hours on an obfuscated per-call signature (`X-Bogus`, `X-Gnarly`, HMAC query param), test **empirically** whether the backend actually validates it. Some are best-effort bot-scoring telemetry that gets logged but never rejected on.
+
+> **RUN THIS FROM OUTSIDE THE PAGE.** An in-page probe cannot strip a header the page's own
+> monkeypatched `fetch` re-adds, so it answers `200` for a header that is mandatory and the whole
+> mimic gets designed on that. `scripts/probe-signature-enforcement.js` is a `[run-code]` in-page
+> script and has exactly this blind spot for HEADER-borne signatures — it is only trustworthy for a
+> signature carried as a URL QUERY PARAM, which the page's wrapper does not rewrite. Any past
+> "not enforced" verdict reached with it against a header is unproven, not proven.
+
+The honest form is a **verbatim replay from `curl`** (or the target language), built from the saved
+HAR so every other header matches the real request:
 
 ```bash
-playwright-cli -s=sla-probe run-code --filename=scripts/probe-signature-enforcement.js
+# arm A — positive control: the request replayed verbatim MUST return 200,
+#         or the harness is broken and no other arm means anything
+curl -s -o /dev/null -w '%{http_code}\n' -H @verbatim_hdr.txt "<url>"
+# arm B — the same thing with ONLY the signature header removed
+grep -iv '^x-sap-sec:' verbatim_hdr.txt > nosec.txt
+curl -s -o /dev/null -w '%{http_code}\n' -H @nosec.txt "<url>"
+# arm C — per-request or per-session? put endpoint 1's signature on endpoint 2
+curl -s -o /dev/null -w '%{http_code}\n' -H @swapped.txt -X POST --data @body2.json "<url2>"
 ```
 
-- **Same status + same response shape with it stripped** → not enforced. Skip reproducing the signer entirely; call the endpoint plain.
-- **401/403/empty body/different shape** → enforced. Don't strip it — replay through the page's own MAIN-world `fetch` instead so the resident signer signs for you (`credential-harvest.md` "Auth models").
+- **A 200, B 200** → not enforced. Skip the signer; call the endpoint plain.
+- **A 200, B 4xx, C 200** → enforced but **per-session**: harvest one signature and reuse it.
+- **A 200, B 4xx, C 4xx** → enforced **per-request**. No HTTP client can reproduce it — run the calls
+  in-page instead, through the resident signer (`credential-harvest.md` "Auth models"), which is what
+  the Shopee Brand Portal adapter does.
+
+Arm C is the one people skip, and it is the one that decides whether a mimic is possible at all.
 
 Only probe idempotent reads this way — never a write endpoint (a stripped-signature POST might still execute for real).
 

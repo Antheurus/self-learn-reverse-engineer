@@ -8,9 +8,8 @@ description: >-
   scratch, so "bikin chrome extension", "bikin ekstensi chrome", "bikin plugin chrome", "build a chrome
   extension", or "build an extension that reads the page" starts here — capture the flow with
   sla-capture, verify with sla-run, then hand off to sla-extensify. Router dispatches sla-capture,
-  sla-run, sla-correct, sla-extensify (MV3 extensions), sla-daemonize (a one-shot flow becomes a
-  resident automation that fires on page open and keeps running — "jalan sendiri", "jalan terus",
-  "otomatis pas buka web"), sla-codify (API mimic first, Patchright UI fallback), and sla-perf (DevTools-grade performance analysis over CDP — traces, throttling, coverage,
+  sla-run, sla-correct, sla-extensify (MV3 extensions, including one that fires by itself on page open
+  instead of waiting for a click), sla-codify (API mimic first, Patchright UI fallback), and sla-perf (DevTools-grade performance analysis over CDP — traces, throttling, coverage,
   and scrape-pipeline batching-vs-sequential — without installing chrome-devtools-mcp). Trigger on
   "docs/automation", playbook names, "run/jalanin", "extensify", "codify", "mimic API",
   "lemot/slow/performance/LCP/bottleneck", or multi-step web workflows.
@@ -43,13 +42,9 @@ This is the opposite pattern from "rediscover the DOM each time" — discovery i
     ┌─────────────┐         ┌─────────────────────────────┐
     │sla-extensify│         │ sla-codify                  │
     │  MV3 ext    │         │ 1) API mimic (method: api)  │  ← default
-    └──────┬──────┘         │ 2) Patchright UI fallback   │
-           │                └─────────────────────────────┘
-           │ click-triggered panel works
-           ▼
-    ┌──────────────┐
-    │sla-daemonize │  ← removes the human from the trigger: fires on page open,
-    └──────────────┘    keeps running. Needs dedupe + throttle + kill switch.
+    └─────────────┘         │ 2) Patchright UI fallback   │
+      click-triggered,      └─────────────────────────────┘
+      or fires on page open
 
     ┌─────────────┐
     │  sla-perf   │  ← measures cost, changes nothing. Attaches at any point:
@@ -58,16 +53,15 @@ This is the opposite pattern from "rediscover the DOM each time" — discovery i
 
 ---
 
-## The bundle — seven sub-skills
+## The bundle — six sub-skills
 
 | Sub-skill | Does | Entry point |
 |---|---|---|
 | `sla-capture` | First-run discovery via **playwright-cli**, save playbook | New workflow |
 | `sla-run` | Execute playbook via **playwright-cli**, update run log | "run/jalanin" / known playbook |
 | `sla-correct` | Self-heal broken selectors/steps | Failed run or "automation broken" |
-| `sla-extensify` | MV3 extension from playbook + network contracts | "extensify", `extensions/` deliverable |
+| `sla-extensify` | MV3 extension from playbook + network contracts — click-triggered by default, or firing by itself on page open | "extensify", `extensions/` deliverable, "jalan sendiri", "otomatis pas buka web" |
 | `sla-codify` | API mimic adapter first; Patchright UI only if needed | "codify", "mimic API", service endpoint |
-| `sla-daemonize` | One-shot flow → resident automation that fires on page open and keeps running | "jalan sendiri", "jalan terus", "otomatis pas buka web", "daemonize", "auto-run" |
 | `sla-perf` | Measure page cost and pipeline throughput over CDP; report opportunities, change nothing | "lemot", "slow", "performance", "LCP", "bottleneck", "kenapa scrape-nya lama" |
 
 **Start here:** invoke `Skill({skill: "<sla-name>"})` for the mode that matches the user's intent.
@@ -84,8 +78,8 @@ This is the opposite pattern from "rediscover the DOM each time" — discovery i
 | User reports "automation X is broken" or "this used to work" | `sla-correct` (then back to `sla-run`) |
 | User wants Chrome extension from playbook / network discovery | `sla-extensify` |
 | User wants a backend adapter / service endpoint from an existing playbook | `sla-codify` |
-| User wants it to run BY ITSELF on page open / keep running in the background, not per click | `sla-daemonize` |
-| User wants it to run with no browser open at all (server-side, on a schedule) | `sla-codify` — NOT daemonize |
+| User wants it to run BY ITSELF on page open, not per click | `sla-extensify` — "If it fires without a click" |
+| User wants it to run with no browser open at all (server-side, on a schedule) | `sla-codify` plus a backend scheduler — an extension cannot run while Chrome is shut |
 | User asks why something is slow, or what could be made faster — a page or a pipeline | `sla-perf` |
 
 If the user's intent is ambiguous (e.g., "do the shopee thing"), check `docs/automation/*.md` first — if a matching playbook exists, default to `sla-run`. If not, ask via `AskUserQuestion` whether they want to capture a new one.
@@ -137,7 +131,6 @@ If the user's intent is ambiguous (e.g., "do the shopee thing"), check `docs/aut
 ├── sla-correct/SKILL.md                 # self-heal sub-skill
 ├── sla-extensify/SKILL.md               # MV3 extension from playbook
 ├── sla-codify/SKILL.md                  # BE translation sub-skill
-├── sla-daemonize/SKILL.md               # one-shot → resident automation (page-open trigger)
 └── sla-perf/                            # measurement sub-skill (read-only)
     ├── SKILL.md
     ├── references/cdp-mimic-map.md      # chrome-devtools-mcp → CDP, tool by tool
