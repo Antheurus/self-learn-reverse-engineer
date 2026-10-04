@@ -76,6 +76,7 @@ consumed in.
 | Script | Runs in | Does |
 |---|---|---|
 | `capture-har.js` | `browser-run-code` | Passive HAR 1.2 capture |
+| `stealth-init.js` | `browser-run-code` | Hides the automation flags of a vanilla Playwright session; header says what it measurably changes |
 | `har-digest.py` | `local-python` | Reads a saved HAR and prints endpoints, credential names, flags and chain hints — never a value |
 | `capture-on-trigger.js` | `browser-run-code` | Active fetch/axios monkeypatch capture |
 | `route-intercept-capture.js` | `browser-run-code` | Safe write-path capture — fakes success, sends nothing |

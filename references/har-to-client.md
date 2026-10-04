@@ -72,9 +72,20 @@ Try them in this order and stop at the first that reaches parity. Each step down
 | 4. Patchright UI | The data only exists as a generated file, or the server checks that the UI steps were walked | a browser per job |
 
 Rung 2 is `httpcloak` (npm and PyPI, same name): it presents a real browser's TLS and HTTP/2
-fingerprint from a plain HTTP client. **It has not been proven on any target in this bundle yet** —
-the first use must run §1.5's arm A as a positive control and record the result here. If arm A fails
-through it, go to rung 3; do not tune it.
+fingerprint from a plain HTTP client. Measured 2026-10-05 with 1.7.2, preset `chrome-146`, HTTP/3 off,
+against `requests` sending the same Chrome user agent:
+
+| Target | `requests` | `httpcloak` |
+|---|---|---|
+| zillow.com search | 403, "Access to this page has been denied" | 200, the real results page |
+| indeed.com search | 403, "Security Check" | 200, the real results page |
+| g2.com, crunchbase.com, autoscout24.com | 403 | 403 |
+
+So it clears a check that reads the handshake (the echo at `tls.peet.ws` showed `requests` on
+HTTP/1.1 with no HTTP/2 fingerprint at all, and `httpcloak` on h2 with a Chrome JA4) and does nothing
+for a check that needs JavaScript to run. **A 403 through it means rung 3; do not tune presets.** Run
+§1.5's arm A through it on each new target before building on it, and read the page title or a known
+field, never the status alone: a challenge page can answer 200.
 
 ---
 
@@ -109,14 +120,30 @@ the playbook changes.
 
 ---
 
+## Two upstream pieces that are allowed, and where each fits
+
+Both were refused at first and allowed by the user on 2026-10-05. Neither is the default.
+
+**`chrome-devtools-mcp`** is the one way to drive the user's *real* Chrome, with the sessions and
+cookies already in it, instead of a copied profile. Reach for it when the login cannot be reproduced
+in a `playwright-cli` profile at all. It is not installed by default (`claude mcp add chrome-devtools
+-- npx chrome-devtools-mcp@latest`, Chrome 146+), and it produces **no HAR**: every call that matters
+is pulled with `list_network_requests` then `get_network_request` and written to
+`docs/automation/captures/<name>.json` before anything else, or the capture is not done (hard rule 8).
+`playwright-cli` stays the default because it records a HAR and keeps its own profile.
+
+**`scripts/stealth-init.js`** hides the automation flags of a vanilla Playwright session. Its header
+carries what it measurably changes, which is less than the name suggests. It is never stacked on
+Patchright, and a rotated or hand-set user agent is still out (hard rule 5).
+
 ## What was not taken from upstream, and why
 
 | Upstream does | Here | Reason |
 |---|---|---|
 | Hardcodes every cookie and token into the generated client | Credentials stay in `docs/automation/.env` or the project's session store | A generated file gets committed. A token in source is a token in git history, and this repo's own examples are public |
 | Infers required vs optional parameters from reading traffic | Removal test | Traffic shows what was sent. `x-sap-sec` looked mandatory and tested as telemetry |
-| Drives through Playwright MCP, Chrome DevTools MCP or `agent-browser` | `playwright-cli` on a persistent profile | A second automation stack is a second profile and no Patchright (hard rule 10) |
-| Injects a stealth script and rotates user agents | Patchright with `channel: "chrome"` and no custom UA | A hand-set user agent is itself the signal (hard rule 5) |
+| Drives through Playwright MCP or `agent-browser` | `playwright-cli` on a persistent profile | Neither adds a capability the two allowed stacks lack |
+| Rotates user agents, spoofs WebGL and hardware values | Real Chrome reporting its real values | A hand-set value that disagrees with the hardware is itself the signal (hard rule 5) |
 | Tells the model to read the HAR file | `har-digest.py` | A HAR does not fit in context, and reading it prints the session's credentials into the transcript |
 | Allows five fix attempts on the generated client | Three, then report | The fourth attempt is a guess about the site, and the site is the thing not yet understood |
 | Collector mode (web search → JSONL) | Not here | It reverse-engineers nothing; `WebSearch` already does it |

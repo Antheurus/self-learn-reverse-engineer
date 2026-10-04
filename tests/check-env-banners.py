@@ -36,6 +36,7 @@ ENV = {
     "replay-with-fresh-fields.js": RUNCODE,
     "route-intercept-capture.js": RUNCODE,
     "solve-shape-match-captcha.js": RUNCODE,
+    "stealth-init.js": RUNCODE,
     "walk-react-fiber.js": CONSOLE,
     "walk-vue-tree.js": CONSOLE,
 }
