@@ -35,7 +35,7 @@ ENV_HEADER = """\
 README_HEADER = """\
 # Automation Playbooks
 
-Each `.md` file is a runnable playbook used by the `self-learn-automation` skill.
+Each `.md` file is a runnable playbook used by the `self-learn-reverse-engineer` skill.
 Run any of them by asking Claude: "run the <name> playbook".
 
 ## Available playbooks

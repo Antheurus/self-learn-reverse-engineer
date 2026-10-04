@@ -1,8 +1,11 @@
-# self-learn-automation
+# self-learn-reverse-engineer
 
-A [Claude Code](https://claude.com/claude-code) skill bundle for capturing a repetitive browser
-workflow **once**, then running it reliably forever — and turning it into production code that calls
-the site's own HTTP APIs instead of driving a browser on every cron tick.
+A [Claude Code](https://claude.com/claude-code) skill bundle for reverse-engineering a website
+**once** — its UI steps and the HTTP API underneath them — then running what was learned reliably
+forever, and turning it into production code that calls the site's own APIs instead of driving a
+browser on every cron tick.
+
+Formerly `self-learn-automation`. The sub-skills keep their `sla-` prefix.
 
 The core idea: **a playbook is durable knowledge.** Each session either confirms the playbook still
 works or repairs the part that broke. Discovery happens once; production replays captured requests
@@ -31,7 +34,7 @@ This is the opposite of "rediscover the DOM every run".
                             └─────────────────────────────┘
 ```
 
-## The five sub-skills
+## The six sub-skills
 
 | Sub-skill | Does | Triggered by |
 |---|---|---|
@@ -40,6 +43,7 @@ This is the opposite of "rediscover the DOM every run".
 | `sla-correct` | Self-heals broken selectors and steps | A failed run, "automation broken" |
 | `sla-extensify` | Builds an MV3 Chrome extension from the playbook | "extensify" |
 | `sla-codify` | Backend adapter — HTTP mimic first, UI automation only as fallback | "codify", "mimic API" |
+| `sla-perf` | Measures what a page or a scrape pipeline costs, over CDP; changes nothing | "slow", "bottleneck", "LCP" |
 
 ## What's in here
 
@@ -52,6 +56,7 @@ This is the opposite of "rediscover the DOM every run".
 | `references/network-flow-spec.md` | Capture-artifact contract: verbatim, never summarized |
 | `references/network-discovery.md` | Wire vs post-decrypt vs in-memory; bulk URL compare |
 | `references/api-mimic-codify.md` | Turning captured requests into a `fetch` adapter |
+| `references/har-to-client.md` | Site → API client or OpenAPI spec from a saved HAR; which transport to use; refresh-on-401 |
 | `references/credential-harvest.md` | Where each auth key actually lives, and the four auth models |
 | `references/authenticated-websocket-replay.md` | Write paths that ride an open socket |
 | `references/self-correction.md` | Failure-mode catalog |
@@ -71,6 +76,7 @@ consumed in.
 | Script | Runs in | Does |
 |---|---|---|
 | `capture-har.js` | `browser-run-code` | Passive HAR 1.2 capture |
+| `har-digest.py` | `local-python` | Reads a saved HAR and prints endpoints, credential names, flags and chain hints — never a value |
 | `capture-on-trigger.js` | `browser-run-code` | Active fetch/axios monkeypatch capture |
 | `route-intercept-capture.js` | `browser-run-code` | Safe write-path capture — fakes success, sends nothing |
 | `comprehensive-search-harvest.js` | `browser-console` | Value-first credential locator (cookie / localStorage / IndexedDB / heap) |
@@ -106,7 +112,7 @@ script that looks identical to the browser snippets while being unpasteable into
 ## Install
 
 ```bash
-git clone https://github.com/Antheurus/self-learn-automation.git ~/.claude/skills/self-learn-automation
+git clone https://github.com/Antheurus/self-learn-reverse-engineer.git ~/.claude/skills/self-learn-reverse-engineer
 ```
 
 Requires [`playwright-cli`](https://github.com/vercel-labs/playwright-cli) for the capture and run
@@ -122,6 +128,13 @@ accounts captcha-walled.
 
 The bundled examples under `assets/example-playbooks/` are sanitized: hostnames, account names, and
 record IDs are placeholders. The techniques and the lessons in them are verbatim from real runs.
+
+## Credit
+
+The HAR-to-client pass in `references/har-to-client.md` follows the shape of
+[reverse-api-engineer](https://github.com/kalil0321/reverse-api-engineer) (MIT) — browse, record a HAR,
+write a client from the traffic. No code was copied; that file lists what was taken and what was
+deliberately left out.
 
 ## License
 

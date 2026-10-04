@@ -137,7 +137,7 @@ Also fold in terminal-failure fast-fail (a known failure status code should stop
 | Same row count / IDs | Mimic vs one UI export or capture HAR sample |
 | Date range | `time_from` / `time_to` match playbook window |
 | Pagination | All pages until empty `exceptional_case_list` (or equivalent) |
-| Auth failure | Clear `AuthError` with refresh instructions |
+| Auth failure | One silent refresh when the capture holds a refresh call, then a clear `AuthError` with re-login instructions (`har-to-client.md`) |
 
 Do **not** declare codify done until mimic returns equivalent data without driving the export dialog.
 
@@ -185,7 +185,7 @@ api_contracts:
 - Hardcode one `SPC_CDS` forever — harvest per session/brand.
 - Skip parity check because "fetch returned 200".
 - Keep Playwright in cron for data that mimic already serves.
-- Assume a Node/Go `fetch()` will reach every endpoint a browser reaches. Some token-refresh/login-adjacent calls are gated by a Cloudflare (or similar) bot-fingerprint check that only passes from inside a real browser context — if a call 1010s or CAPTCHAs from a raw HTTP client but succeeds from `page.evaluate(fetch)`, that's the signal to keep that one call browser-driven (hybrid) rather than pure `method: "api"`, not a bug to keep chasing.
+- Assume a Node/Go `fetch()` will reach every endpoint a browser reaches. Some token-refresh/login-adjacent calls are gated by a Cloudflare (or similar) bot-fingerprint check that only passes from inside a real browser context — if a call 1010s or CAPTCHAs from a raw HTTP client but succeeds from `page.evaluate(fetch)`, that's the signal to keep that one call browser-driven (hybrid) rather than pure `method: "api"`, not a bug to keep chasing. One rung sits between the two and is cheaper than a browser — a fingerprint-matching HTTP client; `har-to-client.md` "Which transport the client uses" says when it applies.
 - Assume every action a browser can do is API-replayable at all. Some flows enforce **server-side sequential-action progression** — an identical-payload direct API call fails ("access restricted") while the same action via real UI clicks succeeds, because the server verifies the user actually stepped through the prior UI states, not just that the final payload is correct. Verify this empirically (one direct-replay attempt) before committing to a pure API-mimic design for a given flow; if it fails this way, `be-adapter-translation.md` (Patchright UI) is the only path, not a signing problem to solve.
 
 ---
@@ -195,6 +195,7 @@ api_contracts:
 | File | Role |
 |------|------|
 | `network-discovery.md` | Find the right fetch |
+| `har-to-client.md` + `scripts/har-digest.py` | Start from a saved HAR; transport ladder; refresh-on-401; OpenAPI output |
 | `credential-harvest.md` | Find where tokens live |
 | `scripts/comprehensive-search-harvest.js` | DevTools harvest script |
 | `be-adapter-translation.md` | Patchright fallback only |

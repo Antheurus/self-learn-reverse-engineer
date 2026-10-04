@@ -8,7 +8,7 @@
 # alone — history gets rewritten, and a control that silently disappears takes the proof with it.
 # ENV: shell — Shell — run it directly with bash.
 # Scaffold a new playbook in <project>/docs/automation/<name>.md
-# Usage: ~/.claude/skills/self-learn-automation/scripts/new-playbook.sh <playbook-name> "<one-line description>"
+# Usage: ~/.claude/skills/self-learn-reverse-engineer/scripts/new-playbook.sh <playbook-name> "<one-line description>"
 #
 # Run from the project root. Creates docs/automation/ if missing, ensures .env exists
 # and .gitignore excludes it, then writes the playbook stub.
@@ -57,7 +57,7 @@ if [ ! -f docs/automation/README.md ]; then
   cat > docs/automation/README.md <<'EOF'
 # Automation Playbooks
 
-Each `.md` file is a runnable playbook used by the `self-learn-automation` skill.
+Each `.md` file is a runnable playbook used by the `self-learn-reverse-engineer` skill.
 Run any of them by asking Claude: "run the <name> playbook".
 
 ## Available playbooks

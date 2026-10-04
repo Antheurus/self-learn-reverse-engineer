@@ -16,7 +16,7 @@ Before mimicking an internal API, enumerate **where each required key lives** (c
 
 Bundled script:
 
-`~/.claude/skills/self-learn-automation/scripts/comprehensive-search-harvest.js`
+`~/.claude/skills/self-learn-reverse-engineer/scripts/comprehensive-search-harvest.js`
 
 ### Usage
 

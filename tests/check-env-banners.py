@@ -28,6 +28,7 @@ ENV = {
     "capture-on-trigger.js": RUNCODE,
     "comprehensive-search-harvest.js": CONSOLE,
     "find-fields-recursive.js": RUNCODE,
+    "har-digest.py": LOCAL,
     "new-playbook.py": LOCAL,
     "poll-async-export.js": CONSOLE,
     "probe-field-levels.js": RUNCODE,

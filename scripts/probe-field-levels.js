@@ -6,7 +6,7 @@
 // This is the field-leveling methodology from the api-dto-pattern skill
 // (~/.kiro/skills/api-dto-pattern), stripped down to just the classification
 // procedure — no DTO file, no entity mapping, no validate()/export scaffolding.
-// What self-learn-automation needs is the TEST, not the code-generation output.
+// What self-learn-reverse-engineer needs is the TEST, not the code-generation output.
 //
 // Decision tree (from observed behavior only):
 //   remove field → 401/403/400 or materially different error   → L1 (required)

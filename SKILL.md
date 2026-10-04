@@ -1,23 +1,28 @@
 ---
-name: self-learn-automation
+name: self-learn-reverse-engineer
 description: >-
-  Build, run, and progressively improve browser-based automation playbooks for repetitive web tasks —
-  multi-step click sequences, form fills, file downloads with polling, scraping flows. Uses
-  playwright-cli (NOT Playwright MCP browser_*). Each playbook lives in docs/automation/. THIS IS ALSO
-  THE ENTRY POINT FOR ANY BROWSER EXTENSION: an extension is built from a verified playbook, never from
-  scratch, so "bikin chrome extension", "bikin ekstensi chrome", "bikin plugin chrome", "build a chrome
-  extension", or "build an extension that reads the page" starts here — capture the flow with
-  sla-capture, verify with sla-run, then hand off to sla-extensify. Router dispatches sla-capture,
-  sla-run, sla-correct, sla-extensify (MV3 extensions, including one that fires by itself on page open
-  instead of waiting for a click), sla-codify (API mimic first, Patchright UI fallback), and sla-perf (DevTools-grade performance analysis over CDP — traces, throttling, coverage,
-  and scrape-pipeline batching-vs-sequential — without installing chrome-devtools-mcp). Trigger on
-  "docs/automation", playbook names, "run/jalanin", "extensify", "codify", "mimic API",
-  "lemot/slow/performance/LCP/bottleneck", or multi-step web workflows.
+  Reverse-engineer a website into something that runs without re-discovering it — capture its UI steps
+  AND the internal HTTP API underneath, save them verbatim as a playbook plus HAR in docs/automation/,
+  then replay, repair, or turn them into an API client, backend adapter or extension. Use whenever the
+  user wants a site's hidden API found, copied or documented: "reverse engineer this site", "RE-in web
+  ini", "bongkar API-nya", "cari endpoint-nya", "turn this website into an API", "jadiin API", "bikin
+  client dari HAR", "analisa HAR ini", "OpenAPI spec dari web ini" — and for any repetitive web task
+  worth capturing once (click sequences, form fills, downloads with polling, scraping). Start here, not
+  at sla-codify, when no playbook or capture exists yet. NOT for a bug in an API the user owns
+  (diagnosing-bugs). Uses playwright-cli (NOT Playwright MCP). ALSO THE ENTRY POINT FOR ANY BROWSER
+  EXTENSION — "bikin chrome extension", "bikin ekstensi chrome", "bikin plugin chrome", "build a chrome
+  extension" start here: sla-capture, then sla-run, then sla-extensify, never from scratch. Router
+  dispatches sla-capture, sla-run, sla-correct, sla-extensify (MV3, click-triggered or firing on page
+  open), sla-codify (API mimic first, Patchright UI fallback) and sla-perf (performance analysis over
+  CDP, no chrome-devtools-mcp). Trigger on "docs/automation", playbook names, a .har file,
+  "run/jalanin", "extensify", "codify", "mimic API", "lemot/slow/performance/LCP/bottleneck".
 ---
 
-# Self-Learn Automation
+# Self-Learn Reverse Engineer
 
-A bundle of skills for capturing repetitive browser workflows once, then running them reliably forever — with self-improvement when sites change, and a translation path to production backend adapters.
+A bundle of skills for taking a website apart once — its UI steps and the HTTP API underneath them — and keeping what was learned as a playbook that runs reliably forever, repairs itself when the site changes, and translates into an API client, a backend adapter or an extension.
+
+The bundle was called `self-learn-automation` until 2026-10-05. The sub-skills keep their `sla-` prefix: it is what the user types and what every project's playbooks already reference.
 
 The core idea: **a playbook is durable knowledge**. Each session either confirms it works or updates the parts that broke. The first run uses **playwright-cli** to discover UI steps **and** internal API contracts. **Codify** turns that into production code that **mimics the platform's own HTTP APIs** (lightweight `fetch`) — not a permanent heavy browser per cron job. Patchright UI adapters are **fallback** when data only exists as generated files (XLSX/ZIP) or mimic cannot reach parity.
 
@@ -78,6 +83,7 @@ This is the opposite pattern from "rediscover the DOM each time" — discovery i
 | User reports "automation X is broken" or "this used to work" | `sla-correct` (then back to `sla-run`) |
 | User wants Chrome extension from playbook / network discovery | `sla-extensify` |
 | User wants a backend adapter / service endpoint from an existing playbook | `sla-codify` |
+| User wants a site turned into an API client or an OpenAPI spec, or hands over a `.har` | `references/har-to-client.md` — digest the HAR first; open a browser only if no capture exists, then `sla-codify` |
 | User wants it to run BY ITSELF on page open, not per click | `sla-extensify` — "If it fires without a click" |
 | User wants it to run with no browser open at all (server-side, on a schedule) | `sla-codify` plus a backend scheduler — an extension cannot run while Chrome is shut |
 | User asks why something is slow, or what could be made faster — a page or a pipeline | `sla-perf` |
@@ -100,12 +106,13 @@ If the user's intent is ambiguous (e.g., "do the shopee thing"), check `docs/aut
 └── <session-name>/                      # named copies, one per parallel/dedicated session (e.g. hq/, shopee/, bts-day2-slot-1/)
 
 ~/.claude/skills/
-├── self-learn-automation/               # ← this skill (router + shared references)
+├── self-learn-reverse-engineer/         # ← this skill (router + shared references)
 │   ├── SKILL.md
 │   ├── references/
 │   │   ├── playbook-format.md           # full playbook schema
 │   │   ├── primitives.md                # playwright-cli patterns
 │   │   ├── api-mimic-codify.md          # primary codify: HTTP mimic (sla-codify)
+│   │   ├── har-to-client.md             # site → API client/OpenAPI from a saved HAR; transport ladder
 │   │   ├── credential-harvest.md        # auth key locations (comprehensive-search)
 │   │   ├── network-discovery.md         # fetch compare, wire vs decrypt, bulk URL probe
 │   │   ├── self-correction.md           # failure mode catalog
@@ -113,6 +120,7 @@ If the user's intent is ambiguous (e.g., "do the shopee thing"), check `docs/aut
 │   ├── scripts/
 │   │   ├── new-playbook.py                    # scaffold a playbook (argparse, --dry-run)  [local py]
 │   │   ├── capture-har.js                     # passive HAR 1.2 capture  [run-code]
+│   │   ├── har-digest.py                      # HAR → endpoints/auth names/flags/chain, no values  [local py]
 │   │   ├── comprehensive-search-harvest.js    # DevTools credential harvest v3  [console]
 │   │   ├── route-intercept-capture.js         # safe write-path capture (fake-success route)  [run-code]
 │   │   ├── capture-on-trigger.js              # active fetch/axios monkeypatch capture  [run-code]
@@ -189,6 +197,9 @@ The `[bracket]` on each script is its **execution environment**, not a category 
 | Summarize a captured endpoint in prose instead of the literal `fetch()` | A paraphrase isn't replayable; the next session re-REs it. Paste copy-as-fetch verbatim. |
 | Describe a multi-step API flow as a paragraph | Use the `## Orchestration chain` table: responseN.field → requestN+1.param. The chain IS the deliverable. |
 | Finish a network capture without saving a HAR/JSON to `docs/automation/captures/` | Nothing durable was produced; the RE evaporates and gets redone |
+| `Read` a `.har`, or print one, to see what is in it | Megabytes of context and every cookie of the session in the transcript. `scripts/har-digest.py` prints names and shapes only |
+| Hardcode a captured cookie or token into a generated client "so it runs with zero setup" | The file gets committed and the token lives in git history. Rule 2 has no zero-setup exception |
+| Decide a parameter is required because the browser sent it | A HAR shows what was sent, not what is needed. Removal test, `api-mimic-codify.md` §1.6 |
 | Open a browser to RE a flow already in `docs/automation/` | Banned — read the saved playbook/HAR. This is the documented multi-hour time sink. |
 | Install `chrome-devtools-mcp` to get DevTools capability | It is CDP underneath, and our browser already speaks CDP. A second stack means a second profile, no Patchright, and two things to keep in sync |
 | Use `playwright-cli tracing-start` to answer "why is this page slow" | Wrong artifact — that is the action log, not a performance trace. `sla-perf` |
@@ -205,6 +216,7 @@ The `[bracket]` on each script is its **execution environment**, not a category 
 | **Capturing ANY network/API flow (the verbatim + mermaid + orchestration-chain + HAR contract)** | **`references/network-flow-spec.md` (MANDATORY)** |
 | Implementing login / polling / downloads / SPA nav / httpOnly cookies | `references/primitives.md` |
 | Finding which API fetch has the payload / comparing two URLs, capturing a write path safely, or finding an unknown field | `references/network-discovery.md` |
+| Turning a site into an API client or OpenAPI spec, working from a HAR that already exists, choosing the transport (plain HTTP → fingerprint client → in-page → UI), or wiring refresh-on-401 | `references/har-to-client.md`, `scripts/har-digest.py` |
 | The write/send path is a WebSocket frame (chat/IM/realtime/collab) — reproduce a send without DOM | `references/authenticated-websocket-replay.md` |
 | Building MV3 extension from playbook | `sla-extensify` + `chrome-extension-mv3` |
 | A step just failed and you need to fix it | `references/self-correction.md` |
