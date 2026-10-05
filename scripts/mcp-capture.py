@@ -15,8 +15,10 @@ assembles a HAR 1.2. It prints counts and the output path, never a header or a b
     python3 scripts/mcp-capture.py --out /tmp/x.har --url https://example.com/jobs -- --headless --isolated
 
 Everything after `--` goes to chrome-devtools-mcp; with nothing there it gets `--autoConnect`.
-`--page` picks the open tab whose URL contains the text. Only requests made since that tab's last
-navigation exist to be captured, so with the user's Chrome: they load the page, then this runs.
+`--page` picks the open tab whose URL contains the text. The server only records requests it saw
+after it attached, so a tab that was already open yields 0 entries: measured on a real Chrome, the
+connection succeeded and the capture was empty. Use `--url` with `--new-tab` to load the page in a
+tab of its own, which is closed afterwards and leaves the user's tabs untouched.
 Read the result with `har-digest.py`, like any other HAR.
 """
 
@@ -113,6 +115,7 @@ def main():
     ap.add_argument("--out", required=True, help="path of the .har to write")
     ap.add_argument("--page", help="pick the open tab whose URL contains this")
     ap.add_argument("--url", help="navigate the picked tab here first")
+    ap.add_argument("--new-tab", action="store_true", help="open --url in a new tab and close it afterwards, leaving the user's tabs alone")
     ap.add_argument("--types", default="xhr,fetch", help="resource types to keep (default xhr,fetch)")
     ap.add_argument("--settle", type=float, default=6, help="seconds to wait after --url before listing")
     ap.add_argument("--package", default="chrome-devtools-mcp@latest")
@@ -126,14 +129,26 @@ def main():
 
     mcp = Mcp(["npx", "-y", a.package, *server_args], root)
     try:
-        listed = re.findall(r"^(\d+): (.*)$", mcp.tool("list_pages", {}), re.M)
-        if not listed:
-            sys.exit("no open page reported by chrome-devtools-mcp")
-        chosen = [n for n, rest in listed if a.page and a.page in rest] if a.page else [n for n, rest in listed if "[selected]" in rest]
-        if not chosen:
-            sys.exit(f"no open tab matches --page {a.page!r}; {len(listed)} tab(s) open")
-        page_id = int(chosen[0])
-        if a.url:
+        opened = None
+        if a.new_tab:
+            if not a.url:
+                sys.exit("--new-tab needs --url")
+            before = {n for n, _ in re.findall(r"^(\d+): (.*)$", mcp.tool("list_pages", {}), re.M)}
+            after = re.findall(r"^(\d+): (.*)$", mcp.tool("new_page", {"url": a.url}), re.M)
+            fresh = [n for n, _ in after if n not in before]
+            if len(fresh) != 1:
+                sys.exit(f"could not identify the new tab ({len(fresh)} candidates)")
+            page_id = opened = int(fresh[0])
+            time.sleep(a.settle)
+        else:
+            listed = re.findall(r"^(\d+): (.*)$", mcp.tool("list_pages", {}), re.M)
+            if not listed:
+                sys.exit("no open page reported by chrome-devtools-mcp")
+            chosen = [n for n, rest in listed if a.page and a.page in rest] if a.page else [n for n, rest in listed if "[selected]" in rest]
+            if not chosen:
+                sys.exit(f"no open tab matches --page {a.page!r}; {len(listed)} tab(s) open")
+            page_id = int(chosen[0])
+        if a.url and not a.new_tab:
             mcp.tool("navigate_page", {"pageId": page_id, "type": "url", "url": a.url})
             time.sleep(a.settle)
 
@@ -178,6 +193,8 @@ def main():
                 req_type = next((h["value"] for h in request_headers if h["name"].lower() == "content-type"), "application/json")
                 entry["request"]["postData"] = {"mimeType": req_type, "text": request_body}
             entries.append(entry)
+        if opened is not None:
+            mcp.tool("close_page", {"pageId": opened})
     finally:
         mcp.close()
         shutil.rmtree(parts, ignore_errors=True)
