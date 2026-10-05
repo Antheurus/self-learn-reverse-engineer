@@ -27,6 +27,12 @@ single request to the site.
 
 ## The pass
 
+**0. Capture in one call.** With `playwright-cli run-code`, the listener and the actions it records go
+in the SAME snippet. A listener armed in one call does not hand its collected entries to the next call,
+so a capture split across calls comes back empty while the page plainly made the requests. And drive
+the page by the element reference from a fresh snapshot: a hand-written `getByRole` can resolve to a
+hidden duplicate inside a preload frame and time out on a control that is visibly there.
+
 **1. Digest.** Never `Read` a HAR and never print one: it is megabytes, and it holds every cookie of
 the session.
 
@@ -75,6 +81,12 @@ not rung:
 - **Parse with an HTML parser, never a regex.** On the first real run of this pass, one site quoted
   the same attribute with `'` on its movie template and `"` on its series template, and a regex
   written from the first reported 0 cards on a page holding 24.
+- **A streamed app still serves its first page as a document.** A server-driven UI answers in-app
+  navigation with a React Flight stream (`application/octet-stream`, lines like `5:I["$3",[],"$4"]`),
+  which looks like the thing to decode. GET the page URL from outside first: on one such site the
+  document came back server-rendered with every card in it, and the stream never had to be parsed.
+  What the document leaves out is whatever the page fills in lazily afterwards; find that call in the
+  capture and record it even if the first client does without it.
 - **Prove parity against the browser, not against yourself.** Read the same ids off the rendered page
   and compare them, in order, with the client's first page.
 
