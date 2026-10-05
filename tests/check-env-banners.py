@@ -29,6 +29,7 @@ ENV = {
     "comprehensive-search-harvest.js": CONSOLE,
     "find-fields-recursive.js": RUNCODE,
     "har-digest.py": LOCAL,
+    "mcp-capture.py": LOCAL,
     "new-playbook.py": LOCAL,
     "poll-async-export.js": CONSOLE,
     "probe-field-levels.js": RUNCODE,
@@ -36,7 +37,7 @@ ENV = {
     "replay-with-fresh-fields.js": RUNCODE,
     "route-intercept-capture.js": RUNCODE,
     "solve-shape-match-captcha.js": RUNCODE,
-    "stealth-init.js": RUNCODE,
+    "stealth-check.js": RUNCODE,
     "walk-react-fiber.js": CONSOLE,
     "walk-vue-tree.js": CONSOLE,
 }

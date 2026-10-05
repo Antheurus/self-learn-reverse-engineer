@@ -88,7 +88,7 @@ def leaves(value, prefix="", out=None, cap=400):
             leaves(v, f"{prefix}[]", out, cap)
     elif isinstance(value, (str, int)) and not isinstance(value, bool):
         text = str(value)
-        if 8 <= len(text) <= 200:
+        if 8 <= len(text) <= 200 and not prefix.endswith("__typename"):
             out.append((prefix, text))
     return out
 

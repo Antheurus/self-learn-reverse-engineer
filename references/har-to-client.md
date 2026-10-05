@@ -120,21 +120,63 @@ the playbook changes.
 
 ---
 
-## Two upstream pieces that are allowed, and where each fits
+## Staying undetected — a launch decision, not a script
 
-Both were refused at first and allowed by the user on 2026-10-05. Neither is the default.
+Measured 2026-10-05 with one probe page read from five sessions (playwright-cli 0.1.17, Patchright
+1.63.0, system Chrome):
 
-**`chrome-devtools-mcp`** is the one way to drive the user's *real* Chrome, with the sessions and
-cookies already in it, instead of a copied profile. Reach for it when the login cannot be reproduced
-in a `playwright-cli` profile at all. It is not installed by default (`claude mcp add chrome-devtools
--- npx chrome-devtools-mcp@latest`, Chrome 146+), and it produces **no HAR**: every call that matters
-is pulled with `list_network_requests` then `get_network_request` and written to
-`docs/automation/captures/<name>.json` before anything else, or the capture is not done (hard rule 8).
-`playwright-cli` stays the default because it records a HAR and keeps its own profile.
+| Session | Announces headless | `navigator.webdriver` | webdriver getter still native | `chrome.runtime` |
+|---|---|---|---|---|
+| playwright-cli, headless | **yes** | false | yes | absent |
+| playwright-cli, headless + an init script patching webdriver and `chrome.runtime` | **yes** | false | **no** | **present** |
+| playwright-cli `--headed` | no | false | yes | absent |
+| Patchright headed, `channel: "chrome"`, persistent profile | no | false | yes | absent |
+| Patchright headless | **yes** | false | yes | absent |
 
-**`scripts/stealth-init.js`** hides the automation flags of a vanilla Playwright session. Its header
-carries what it measurably changes, which is less than the name suggests. It is never stacked on
-Patchright, and a rotated or hand-set user agent is still out (hard rule 5).
+Three things follow, and they are the whole method:
+
+1. **Headless is the signal, and only a visible window removes it.** Patchright headless announces
+   itself exactly like playwright-cli headless. For a bot-checked target, open `--headed`.
+2. **A stealth init script made the session worse.** `navigator.webdriver` was already false; patching
+   it replaced a native getter with a page-defined one, and adding `chrome.runtime` invented an object
+   that real headed Chrome does not have on an ordinary page. Both are things a detector can read. So
+   there is no stealth script in this bundle, and one is not to be written: spoofed WebGL, hardware,
+   plugin or user-agent values fail the same way, by disagreeing with the real browser underneath.
+3. **The configuration that passes is the plain one**, and it is the one Patchright's own README gives
+   for being undetected: persistent context, `channel: "chrome"`, `headless: false`, `viewport: null`,
+   and no custom headers or user agent.
+
+`scripts/stealth-check.js` reads these signals off the live session and names the launch option that
+fixes each finding. Run it before the first request to a target with bot checks; it patches nothing.
+
+Not measured here: the `Runtime.enable` CDP leak, which is what Patchright exists to close and what
+the anti-bot vendors' checks are reported to read. The usual in-page probe for it returned the same
+answer in all five sessions, so it could not tell them apart and proves nothing either way. Hard
+rule 5 (Patchright for backend code) stands on Patchright's documentation, not on this table.
+
+## `chrome-devtools-mcp` — allowed, and never called as a capture tool
+
+Allowed by the user on 2026-10-05 for the one thing the other stacks cannot do: reach the user's own
+Chrome with the sessions already in it (Chrome 146+, `--autoConnect`). Measured with 30 tools loaded:
+
+| Reply | Size | Problem |
+|---|---|---|
+| Tool definitions, all 30 | 27,710 chars | paid by every session once the server is installed |
+| `list_network_requests`, xhr+fetch | about 130 chars per request | none — one line each |
+| `get_network_request`, inline | 12,481 chars for a 72,874-char response | **body cut at ~10,000 chars** (`... <truncated>`), and request headers arrive inline, `Cookie` included |
+| `take_snapshot`, inline | 64,491 chars on a job board | pass `filePath` |
+
+So the listing is safe to read and the request detail is not: it is too short to replay and it prints
+the session. **Capture through `scripts/mcp-capture.py`, never through `get_network_request`.** The
+script speaks to the same server over stdio, has it write full bodies to disk, builds a HAR and prints
+only counts; `har-digest.py` reads the result. On the same page it returned the full 72,874-char body
+as valid JSON where the tool call returned a fragment.
+
+Two limits. The server only saves files inside a workspace root the client declares, which the script
+does for the output directory. And the `--autoConnect` path to a real logged-in Chrome is **not yet
+exercised**: the script was verified against a throwaway headless Chrome (`-- --headless --isolated`).
+A headless MCP Chrome is also refused outright by some targets (tokopedia.com answered with a
+protocol error), for the reason in the section above.
 
 ## What was not taken from upstream, and why
 
@@ -143,7 +185,7 @@ Patchright, and a rotated or hand-set user agent is still out (hard rule 5).
 | Hardcodes every cookie and token into the generated client | Credentials stay in `docs/automation/.env` or the project's session store | A generated file gets committed. A token in source is a token in git history, and this repo's own examples are public |
 | Infers required vs optional parameters from reading traffic | Removal test | Traffic shows what was sent. `x-sap-sec` looked mandatory and tested as telemetry |
 | Drives through Playwright MCP or `agent-browser` | `playwright-cli` on a persistent profile | Neither adds a capability the two allowed stacks lack |
-| Rotates user agents, spoofs WebGL and hardware values | Real Chrome reporting its real values | A hand-set value that disagrees with the hardware is itself the signal (hard rule 5) |
+| Injects a stealth script, rotates user agents, spoofs WebGL and hardware values | Real Chrome, headed, reporting its real values | Measured above: the patches are what gets detected |
 | Tells the model to read the HAR file | `har-digest.py` | A HAR does not fit in context, and reading it prints the session's credentials into the transcript |
 | Allows five fix attempts on the generated client | Three, then report | The fourth attempt is a guess about the site, and the site is the thing not yet understood |
 | Collector mode (web search → JSONL) | Not here | It reverse-engineers nothing; `WebSearch` already does it |
