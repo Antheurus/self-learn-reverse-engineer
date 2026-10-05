@@ -60,6 +60,24 @@ site answered; a fourth guess is not a diagnosis.
 
 ---
 
+## When the capture shows no API at all
+
+A digest with nothing but analytics, or with one endpoint that answers 401 to the site's own page,
+is a result, not a failed capture. It means the site is server-rendered and the pass changes shape,
+not rung:
+
+- **Record the dead endpoint verbatim anyway.** The next session will find it in the page's inline
+  config, believe it is the API, and spend an hour on a nonce. The playbook says it was tried and what
+  it answered.
+- **Discovery comes from the sitemap, rows from the HTML.** `sitemap.xml` is usually an index of
+  typed sub-sitemaps with `lastmod`, which is a full list of URLs and a change feed for free. Listing
+  pages give the cards; a JSON-LD block on the detail page is the closest thing to a schema.
+- **Parse with an HTML parser, never a regex.** On the first real run of this pass, one site quoted
+  the same attribute with `'` on its movie template and `"` on its series template, and a regex
+  written from the first reported 0 cards on a page holding 24.
+- **Prove parity against the browser, not against yourself.** Read the same ids off the rendered page
+  and compare them, in order, with the client's first page.
+
 ## Which transport the client uses
 
 Try them in this order and stop at the first that reaches parity. Each step down costs more to run.

@@ -138,14 +138,15 @@ def main():
             time.sleep(a.settle)
 
         types = [t for t in a.types.split(",") if t]
-        rows, index = [], 0
-        while True:
+        rows, seen, index, page_count = [], set(), 0, 1
+        while index < page_count:
             text = mcp.tool("list_network_requests", {"pageId": page_id, "resourceTypes": types, "pageSize": 100, "pageIdx": index})
-            found = re.findall(r"^reqid=(\d+) (\S+) (\S+) \[([^\]]*)\]", text, re.M)
-            rows += found
-            total = re.search(r"of (\d+) \(Page", text)
-            if not found or not total or len(rows) >= int(total.group(1)):
-                break
+            pages = re.search(r"\(Page \d+ of (\d+)\)", text)
+            page_count = int(pages.group(1)) if pages else 1
+            for row in re.findall(r"^reqid=(\d+) (\S+) (\S+) \[([^\]]*)\]", text, re.M):
+                if row[0] not in seen:
+                    seen.add(row[0])
+                    rows.append(row)
             index += 1
 
         entries, pending, truncated = [], 0, 0
@@ -191,4 +192,11 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    try:
+        main()
+    except RuntimeError as error:
+        hint = ""
+        if "DevToolsActivePort" in str(error) or "Could not connect to Chrome" in str(error):
+            hint = ("\nThe user's Chrome is not accepting connections: they open chrome://inspect/#remote-debugging, "
+                    "allow remote debugging, and approve the prompt. Or pass `-- --headless --isolated` for a throwaway Chrome.")
+        sys.exit(f"mcp-capture: {str(error).splitlines()[0]}{hint}")
